@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Record Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .console {
+            font-family: 'Courier New', monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .console-header {
+            background-color: #3c3c3c;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .console-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .console-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .console-button.close { background-color: #ff5f56; }
+        .console-button.minimize { background-color: #ffbd2e; }
+        .console-button.maximize { background-color: #27c93f; }
+        
+        .console-title {
+            margin-left: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .console-body {
+            padding: 1rem;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .console-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .prompt {
+            color: #4ec9b0;
+        }
+        
+        .command-input {
+            background: transparent;
+            border: none;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            outline: none;
+        }
+        
+        .command-output {
+            margin-bottom: 1rem;
+            white-space: pre-wrap;
+        }
+        
+        .student-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .student-table th, .student-table td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .student-table th {
+            color: #569cd6;
+        }
+        
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .info { color: #9cdcfe; }
+        .warning { color: #dcdcaa; }
+        
+        @media (max-width: 768px) {
+            .console-body {
+                height: 300px;
+            }
+            
+            .student-table {
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl">
+        <div class="console">
+            <div class="console-header">
+                <div class="console-buttons">
+                    <div class="console-button close"></div>
+                    <div class="console-button minimize"></div>
+                    <div class="console-button maximize"></div>
+                </div>
+                <div class="console-title">Student Record Management System</div>
+            </div>
+            <div class="console-body" id="consoleOutput">
+                <div class="command-output info">
+███████╗████████╗██╗   ██╗██████╗ ███████╗███╗   ██╗████████╗
+██╔════╝╚══██╔══╝██║   ██║██╔══██╗██╔════╝████╗  ██║╚══██╔══╝
+███████╗   ██║   ██║   ██║██║  ██║█████╗  ██╔██╗ ██║   ██║   
+╚════██║   ██║   ██║   ██║██║  ██║██╔══╝  ██║╚██╗██║   ██║   
+███████║   ██║   ╚██████╔╝██████╔╝███████╗██║ ╚████║   ██║   
+╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   
+                </div>
+                <div class="command-output info">
+Welcome to Student Record Management System (Console Edition)
+Type 'help' to see available commands
+                </div>
+                <div class="command-output">
+<div class="prompt">SRMS&gt;</div> <span class="text-gray-400">// Ready for commands</span>
+                </div>
+            </div>
+            <div class="console-input p-4 border-t border-gray-700">
+                <span class="prompt">SRMS&gt;</span>
+                <input type="text" class="command-input" id="commandInput" placeholder="Enter command..." autofocus>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center text-gray-400 text-sm">
+            <p>Simulated Java Console Application - HTML/CSS/JS Implementation</p>
+            <p class="mt-2">Try commands: help, add, list, search, delete, exit</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const commandInput = document.getElementById('commandInput');
+            const consoleOutput = document.getElementById('consoleOutput');
+            
+            // Sample student data
+            let students = [
+                { id: 1, name: 'John Doe', age: 20, grade: 'A', email: 'john@example.com' },
+                { id: 2, name: 'Jane Smith', age: 21, grade: 'B+', email: 'jane@example.com' },
+                { id: 3, name: 'Mike Johnson', age: 19, grade: 'A-', email: 'mike@example.com' }
+            ];
+            
+            // Command history
+            let commandHistory = [];
+            let historyIndex = -1;
+            
+            // Focus input on page load
+            commandInput.focus();
+            
+            // Handle command input
+            commandInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = commandInput.value.trim();
+                    if (command) {
+                        processCommand(command);
+                        commandHistory.push(command);
+                        historyIndex = commandHistory.length;
+                        commandInput.value = '';
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    // Navigate command history up
+                    if (commandHistory.length > 0 && historyIndex > 0) {
+                        historyIndex--;
+                        commandInput.value = commandHistory[historyIndex];
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    // Navigate command history down
+                    if (historyIndex < commandHistory.length - 1) {
+                        historyIndex++;
+                        commandInput.value = commandHistory[historyIndex];
+                    } else {
+                        historyIndex = commandHistory.length;
+                        commandInput.value = '';
+                    }
+                }
+            });
+            
+            // Process commands
+            function processCommand(command) {
+                const args = command.split(' ');
+                const cmd = args[0].toLowerCase();
+                
+                // Add the command to output
+                addCommandOutput(command);
+                
+                // Process different commands
+                switch(cmd) {
+                    case 'help':
+                        showHelp();
+                        break;
+                    case 'add':
+                        addStudent(args.slice(1));
+                        break;
+                    case 'list':
+                        listStudents();
+                        break;
+                    case 'search':
+                        searchStudent(args.slice(1));
+                        break;
+                    case 'delete':
+                        deleteStudent(args.slice(1));
+                        break;
+                    case 'clear':
+                        clearConsole();
+                        break;
+                    case 'exit':
+                        addOutput("Exiting Student Record Management System...", "info");
+                        setTimeout(() => {
+                            addOutput("Goodbye!", "info");
+                        }, 500);
+                        break;
+                    default:
+                        addOutput(`Unknown command: ${cmd}. Type 'help' for available commands.`, "error");
+                }
+                
+                // Add new prompt
+                addPrompt();
+            }
+            
+            // Add command to output
+            function addCommandOutput(command) {
+                const outputDiv = document.createElement('div');
+                outputDiv.className = 'command-output';
+                outputDiv.innerHTML = `<div class="prompt">SRMS&gt;</div> ${command}`;
+                consoleOutput.appendChild(outputDiv);
+            }
+            
+            // Add output message
+            function addOutput(message, type = 'info') {
+                const outputDiv = document.createElement('div');
+                outputDiv.className = `command-output ${type}`;
+                outputDiv.textContent = message;
+                consoleOutput.appendChild(outputDiv);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+            
+            // Add new prompt
+            function addPrompt() {
+                const promptDiv = document.createElement('div');
+                promptDiv.className = 'command-output';
+                promptDiv.innerHTML = `<div class="prompt">SRMS&gt;</div> <span class="text-gray-400">// Ready for commands</span>`;
+                consoleOutput.appendChild(promptDiv);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+            
+            // Show help
+            function showHelp() {
+                const helpText = `
+Available commands:
+- help                : Show this help message
+- add [name] [age] [grade] [email] : Add a new student
+- list               : List all students
+- search [id/name]   : Search for a student
+- delete [id]        : Delete a student by ID
+- clear              : Clear the console
+- exit               : Exit the application
+                `;
+                addOutput(helpText.trim(), 'info');
+            }
+            
+            // Add student
+            function addStudent(args) {
+                if (args.length < 4) {
+                    addOutput("Usage: add [name] [age] [grade] [email]", "error");
+                    return;
+                }
+                
+                const name = args[0];
+                const age = parseInt(args[1]);
+                const grade = args[2];
+                const email = args[3];
+                
+                if (isNaN(age)) {
+                    addOutput("Age must be a number", "error");
+                    return;
+                }
+                
+                const newId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
+                const newStudent = {
+                    id: newId,
+                    name: name,
+                    age: age,
+                    grade: grade,
+                    email: email
+                };
+                
+                students.push(newStudent);
+                addOutput(`Student added successfully with ID: ${newId}`, "success");
+            }
+            
+            // List students
+            function listStudents() {
+                if (students.length === 0) {
+                    addOutput("No students found in the database.", "warning");
+                    return;
+                }
+                
+                let tableHTML = `
+<table class="student-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Grade</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+                `;
+                
+                students.forEach(student => {
+                    tableHTML += `
+        <tr>
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${student.age}</td>
+            <td>${student.grade}</td>
+            <td>${student.email}</td>
+        </tr>
+                    `;
+                });
+                
+                tableHTML += `
+    </tbody>
+</table>
+                `;
+                
+                const outputDiv = document.createElement('div');
+                outputDiv.className = 'command-output';
+                outputDiv.innerHTML = tableHTML;
+                consoleOutput.appendChild(outputDiv);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+            
+            // Search student
+            function searchStudent(args) {
+                if (args.length === 0) {
+                    addOutput("Usage: search [id/name]", "error");
+                    return;
+                }
+                
+                const searchTerm = args.join(' ');
+                let foundStudents = [];
+                
+                // Search by ID if search term is a number
+                if (!isNaN(searchTerm)) {
+                    const id = parseInt(searchTerm);
+                    foundStudents = students.filter(s => s.id === id);
+                } else {
+                    // Search by name
+                    foundStudents = students.filter(s => 
+                        s.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                }
+                
+                if (foundStudents.length === 0) {
+                    addOutput(`No students found matching: ${searchTerm}`, "warning");
+                    return;
+                }
+                
+                let resultHTML = `
+<div class="mb-2">Found ${foundStudents.length} student(s):</div>
+<table class="student-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Grade</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+                `;
+                
+                foundStudents.forEach(student => {
+                    resultHTML += `
+        <tr>
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${student.age}</td>
+            <td>${student.grade}</td>
+            <td>${student.email}</td>
+        </tr>
+                    `;
+                });
+                
+                resultHTML += `
+    </tbody>
+</table>
+                `;
+                
+                const outputDiv = document.createElement('div');
+                outputDiv.className = 'command-output';
+                outputDiv.innerHTML = resultHTML;
+                consoleOutput.appendChild(outputDiv);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+            
+            // Delete student
+            function deleteStudent(args) {
+                if (args.length === 0) {
+                    addOutput("Usage: delete [id]", "error");
+                    return;
+                }
+                
+                const id = parseInt(args[0]);
+                if (isNaN(id)) {
+                    addOutput("ID must be a number", "error");
+                    return;
+                }
+                
+                const initialLength = students.length;
+                students = students.filter(s => s.id !== id);
+                
+                if (students.length === initialLength) {
+                    addOutput(`No student found with ID: ${id}`, "error");
+                } else {
+                    addOutput(`Student with ID ${id} deleted successfully`, "success");
+                }
+            }
+            
+            // Clear console
+            function clearConsole() {
+                consoleOutput.innerHTML = `
+<div class="command-output info">
+Welcome to Student Record Management System (Console Edition)
+Type 'help' to see available commands
+</div>
+                `;
+                addPrompt();
+            }
+        });
+    </script>
+</body>
+</html>
